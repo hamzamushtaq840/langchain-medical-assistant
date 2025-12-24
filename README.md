@@ -1,4 +1,4 @@
-# AI Medical Assistant 🩺
+# MedSynth - AI Medical Assistant 🩺
 
 Hey there! This is a professional-grade Medical RAG (Retrieval-Augmented Generation) system. Think of it as a clinical pharmacist consultant in your pocket! It uses the MedQA dataset from [Huggingface](https://huggingface.co/datasets/medalpaca/medical_meadow_medqa) and Google's Gemini 2.5 Flash to give you solid, evidence-based answers to tricky medical questions.
 
@@ -37,17 +37,20 @@ Hey there! This is a professional-grade Medical RAG (Retrieval-Augmented Generat
 ### 1. Set up the Backend
 
 Grab the code:
+
 ```
 git clone langchain-medical-assistant/
 cd ai-medical-assistant/backend
 ```
 
 Install the tools:
+
 ```
 uv sync
 ```
 
 Set your API keys:
+
 ```
 LLM_API_KEY=your-google-api-key-here
 LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
@@ -61,6 +64,7 @@ EMBED_DEVICE=cpu
 ```
 
 Fire it up:
+
 ```
 docker compose up
 ```
@@ -70,16 +74,19 @@ You'll find the API hanging out at `http://localhost:7860`.
 ### 2. Set up the Frontend
 
 Head over to the frontend folder:
+
 ```
 cd ../frontend
 ```
 
 Install everything:
+
 ```
 npm install
 ```
 
 Start the dev server:
+
 ```
 npm run dev
 ```
@@ -89,7 +96,7 @@ Go to `http://localhost:3000` and you're good to go!
 ## 🔌 API Details
 
 | Method | Where to go         | What it does                      |
-|--------|---------------------|-----------------------------------|
+| ------ | ------------------- | --------------------------------- |
 | POST   | /                   | Returns the status of backend     |
 | POST   | /chat               | Gives you a standard JSON answer. |
 | POST   | /chat {stream:true} | Streams the answer live!          |
