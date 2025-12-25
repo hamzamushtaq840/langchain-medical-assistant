@@ -1,21 +1,27 @@
 "use client";
-import React, { useState, useEffect, useRef, FC, JSX } from "react";
+import { useState, useEffect, useRef, JSX } from "react";
 import {
   Send,
-  User,
   Activity,
-  Stethoscope,
   Pill,
   Brain,
   Microscope,
   Copy,
   RefreshCw,
-  Zap,
-  Trash2,
   Check,
   CircleAlert,
+  Stethoscope,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import {
+  AIAvatar,
+  UserAvatar,
+  WaveLoader,
+  Header,
+  DeleteModal,
+} from "@/component/ui";
+import Markdown from "@/component/markdown";
+
+// Import extracted components
 
 // -------------------------
 // Configuration
@@ -83,53 +89,6 @@ const SUGGESTED_PROMPTS: SuggestedPrompt[] = [
   },
 ];
 
-// -------------------------
-// Components
-// -------------------------
-
-const AIAvatar: FC = () => (
-  <div className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center bg-linear-to-br from-cyan-600 to-blue-700 text-white shadow-lg border border-slate-800 z-10">
-    <Stethoscope size={20} />
-  </div>
-);
-
-const UserAvatar: FC = () => (
-  <div className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center border border-slate-700 bg-slate-800 text-slate-200 z-10">
-    <User size={18} />
-  </div>
-);
-
-const WaveLoader: FC = () => (
-  <div className="animate-in fade-in flex items-end gap-1.5 duration-300 py-2">
-    {[0, 150, 300].map((delay) => (
-      <div
-        key={delay}
-        className="h-1.5 w-1.5 rounded-full bg-cyan-500"
-        style={{
-          animation: "wave-dot 1.2s ease-in-out infinite",
-          animationDelay: `${delay}ms`,
-        }}
-      />
-    ))}
-  </div>
-);
-
-const Logo: FC = () => (
-  <div className="flex items-center gap-2">
-    <div className="relative flex items-center justify-center w-9 h-9 bg-linear-to-tr from-cyan-600 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20">
-      <Activity className="text-white" size={20} strokeWidth={2.5} />
-    </div>
-    <div className="flex flex-col">
-      <span className="text-lg font-bold text-white leading-tight">
-        Med<span className="text-cyan-400">Synth</span>
-      </span>
-      <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-        Clinical RAG
-      </span>
-    </div>
-  </div>
-);
-
 const generateUUID = () => {
   if (typeof crypto !== "undefined" && crypto.randomUUID)
     return crypto.randomUUID();
@@ -146,6 +105,9 @@ export default function App(): JSX.Element | null {
   const [sessionId, setSessionId] = useState<string>("");
   const [mounted, setMounted] = useState<boolean>(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -188,8 +150,9 @@ export default function App(): JSX.Element | null {
     }
   };
 
-  const clearChat = async () => {
-    if (!sessionId || !confirm("Clear conversation history?")) return;
+  const confirmClearChat = async () => {
+    setIsDeleteModalOpen(false); // Close modal first
+    if (!sessionId) return;
     try {
       await fetch(`${API_BASE}/clear/${sessionId}`, { method: "POST" });
       setMessages([]);
@@ -301,7 +264,8 @@ export default function App(): JSX.Element | null {
   if (!mounted) return null;
 
   return (
-    <div className="flex h-screen bg-slate-950 font-sans text-slate-100 overflow-hidden relative">
+    // Changed h-screen to h-[100dvh] for mobile viewport fix
+    <div className="flex h-dvh flex-col bg-slate-950 font-sans text-slate-100 overflow-hidden relative">
       <style>{`
         @keyframes wave-dot {
           0%, 100% { transform: translateY(0); opacity: 0.3; }
@@ -322,26 +286,11 @@ export default function App(): JSX.Element | null {
       <div className="fixed inset-0 z-1  pointer-events-none" />
 
       {/* --- CONTENT LAYER --- */}
-      <main className="flex-1 flex flex-col relative z-10 overflow-hidden">
-        {/* Header */}
-        <header className="h-16 bg-slate-900/40 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-6">
-          <Logo />
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20 text-xs font-medium">
-              <Zap size={12} fill="currentColor" />
-              <span>System Active</span>
-            </div>
-            <button
-              onClick={clearChat}
-              className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-              title="Clear History"
-            >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        </header>
+      <main className="flex-1 flex flex-col relative z-10 w-full overflow-hidden">
+        {/* Header - Fixed to top via flex layout */}
+        <Header onClearClick={() => setIsDeleteModalOpen(true)} />
 
-        {/* Chat Area */}
+        {/* Chat Area - Takes available space and scrolls internally */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-10 scrollbar-hide">
           <div className="max-w-4xl mx-auto space-y-8 pb-4">
             {messages.length === 0 && (
@@ -353,14 +302,14 @@ export default function App(): JSX.Element | null {
                   Clinical Assistant
                 </h2>
                 <p className="text-slate-500 mb-12 text-sm max-w-sm mx-auto font-medium">
-                  Evidence-based RAG support for healthcare practitioners.
+                  Evidence-based RAG support for healthcare.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:mx-4 mx-0 sm:grid-cols-2 gap-4">
                   {SUGGESTED_PROMPTS.map((item, i) => (
                     <button
                       key={i}
                       onClick={() => handleSend(item.prompt)}
-                      className="flex flex-col items-start p-5 bg-slate-900/40 border border-white/5 rounded-2xl hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all group text-left backdrop-blur-sm"
+                      className="flex cursor-pointer flex-col items-start p-5 bg-slate-900/40 border border-white/5 rounded-2xl hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all group text-left backdrop-blur-sm"
                     >
                       <div className="mb-3 text-slate-500 group-hover:text-cyan-400 transition-colors">
                         {item.icon}
@@ -402,7 +351,8 @@ export default function App(): JSX.Element | null {
                           : "bg-slate-900/70 text-slate-200 border border-white/5 rounded-tl-none backdrop-blur-md"
                       }`}
                     >
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      {/* <ReactMarkdown>{msg.content}</ReactMarkdown> */}
+                      <Markdown content={msg.content} />
                       {msg.streaming && !msg.content && <WaveLoader />}
                     </div>
                     {msg.role === "assistant" &&
@@ -442,10 +392,10 @@ export default function App(): JSX.Element | null {
           </div>
         </div>
 
-        {/* Input Area */}
-        <div className="px-6 pb-6">
+        {/* Input Area - Fixed at bottom via flex layout */}
+        <div className="shrink-0 px-6 pb-6 pt-2 bg-linear-to-t from-slate-950 via-slate-950/90 to-transparent z-20">
           <div className="max-w-4xl mx-auto">
-            <div className="relative flex items-end  backdrop-blur-2xl border border-white/60 rounded-[24px] transition-all duration-300 shadow-2xl">
+            <div className="relative flex items-end  backdrop-blur-2xl border border-white/60 rounded-[24px] transition-all duration-300 shadow-2xl bg-slate-900/20">
               <textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -455,14 +405,14 @@ export default function App(): JSX.Element | null {
                   (e.preventDefault(), handleSend(inputValue))
                 }
                 placeholder="Ask clinical queries..."
-                className="w-full py-5 pl-6 pr-14 bg-transparent border-none rounded-[24px] outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-0 text-slate-200 placeholder-slate-600 resize-none max-h-40 min-h-[60px] text-[15px] font-medium"
+                className="w-full py-4 pl-6 pr-14 bg-transparent border-none rounded-[24px] outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-0 text-slate-200 placeholder-slate-500 resize-none max-h-32 min-h-[56px] text-[15px] font-medium"
                 rows={1}
               />
               <div className="absolute right-2.5 bottom-2.5">
                 <button
                   onClick={() => handleSend(inputValue)}
                   disabled={!inputValue.trim() || isTyping}
-                  className={`p-3 rounded-2xl transition-all duration-300 ${
+                  className={`p-2.5 rounded-xl transition-all duration-300 ${
                     inputValue.trim() && !isTyping
                       ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/40 hover:scale-105 active:scale-95"
                       : "bg-slate-800 text-slate-700 cursor-not-allowed"
@@ -475,8 +425,8 @@ export default function App(): JSX.Element | null {
                 </button>
               </div>
             </div>
-            <p className=" flex justify-center items-center gap-2 text-xs text-slate-500 mt-3 font-medium">
-              <span className="text-orange-400">
+            <p className="flex justify-center items-center gap-2 text-xs text-slate-500 mt-3 font-medium">
+              <span className="text-orange-400 shrink-0">
                 <CircleAlert size={12} />
               </span>
               AI outputs should be verified by a qualified healthcare
@@ -485,6 +435,13 @@ export default function App(): JSX.Element | null {
           </div>
         </div>
       </main>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmClearChat}
+      />
     </div>
   );
 }
