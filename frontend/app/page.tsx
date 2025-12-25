@@ -336,7 +336,7 @@ export default function App(): JSX.Element | null {
                 }`}
               >
                 <div
-                  className={`flex max-w-[85%] gap-4 ${
+                  className={`flex max-w-[95%] sm:max-w-[85%] gap-4 ${
                     msg.role === "user" ? "flex-row-reverse" : "flex-row"
                   }`}
                 >
